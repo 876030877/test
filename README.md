@@ -15,9 +15,8 @@
 
 #### 使用说明
 
-1. xxxx
-2. xxxx
-3. xxxx
+访问 index.html即可，demo是官方提供的样例
+![heightchart 双饼图](https://images.gitee.com/uploads/images/2018/0712/111218_8640e694_343248.png "hightchart.png")
 
 #### 参与贡献
 

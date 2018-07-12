@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>highchart做饼图实例</title>
+<!--		<script src="js/highcharts-4.2.6/highcharts.js"></script>
+		<script src="js/jquery.js"></script>-->
+		<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+		<script src="https://code.highcharts.com/highcharts.js"></script>
+		<script>
+			
+		//颜色
+		var colorss = ['#2FC5EF', '#2BE7D3', '#BDE564', '#FFB94A', '#DCF4A8', 
+					   '#FFF38C', '#8CF8FF', '#D7A7FF', '#FEAD87'] ;
+		var colorlist = [];
+		var categories,data,browserData = [], versionsData = [],i,j, drillDataLen,brightness;
+		var tjurl = "./data/data.json";
+		$.post(tjurl,{}, function(data) {
+			var result = eval("(" + data + ")");
+			categories = result.categories;
+			data = result.data;
+			var colorCount = 0;
+			var dataLen = data.length;
+		// Build the data arrays
+		for (i = 0; i < dataLen; i += 1) {
+			// add browser data
+			browserData.push({
+				name: categories[i],
+				y: data[i].y,
+				color: colorss[colorCount++]
+			});
+			// add version data
+			drillDataLen = data[i].drilldown.data.length;
+			//选择数据塞到相应的位置
+			for (j = 0; j < drillDataLen; j += 1) {
+				brightness = 0.2 - (j / drillDataLen) / 5;
+				var y = data[i].drilldown.data[j];
+				versionsData.push({
+					name: data[i].drilldown.categories[j],
+					y: y,
+					color: colorss[colorCount++]//Highcharts.Color(colorss[colorCount++]).brighten(brightness).get()
+				});
+			}
+		}
+		// Create the chart 创建图表
+		$('#ywzyxmtj').highcharts({
+			credits: {
+				enabled: false
+			},
+			chart: {
+				type: 'pie'
+			},
+			title: {
+				text: '',
+				style: { "color": "black", "fontSize": "10px" ,"font-weight":"bold","float":"left"}
+			},
+			plotOptions: {
+				pie: {
+					shadow: false,
+					center: ['50%', '50%']
+				}
+			},
+			tooltip: {
+				valueSuffix: '%',
+				 pointFormatter:function(){
+					return this.y+'%';
+				}
+			},
+			series: [{
+				name: 'Browsers',
+				data: browserData,
+				size: '55%',
+				dataLabels: {
+					formatter: function () {
+						return this.y > 5 ? this.point.name : null;
+					},
+					color: 'red',
+					distance: -45
+				}
+			}, {
+				name: 'Versions',
+				data: versionsData,
+				size: '55%',
+				innerSize: '55%',
+				dataLabels: {
+					formatter: function () {
+						// display only if larger than 1
+						 return this.y > 0 ? '<span style="font-size:14px;">' + this.point.name + '(' + this.y + '%)</span>'  : null;
+					}
+				}
+			}]
+		});
+		});
+		</script>
+	</head>
+	<body>
+		<div class="dfk_tit">
+			<h3>XXXX情况统计</h3>
+			<div id='r'></div>
+		</div>
+		<a class="big-link" data-reveal-id="myModa1" data-animation="fade" id="zy_sxtj"
+				href="#none">
+			<div id="ywzyxmtj" style="min-width:550px;height:350px;"></div> 
+		</a>
+	</body>
+</html>

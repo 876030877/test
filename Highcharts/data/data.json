@@ -1,0 +1,28 @@
+{
+	"categories": [" 发起1", " 发起2", " 发起1、 发起2"],
+	"data": [{
+		"y": 65.0,
+		"color": "colors[1]",
+		"drilldown": {
+			"categories": ["时限1( 发起1)694", "时限2( 发起1)124"],
+			"data": [55.52, 9.92],
+			"color": {}
+		}
+	}, {
+		"y": 34.0,
+		"color": "colors[2]",
+		"drilldown": {
+			"categories": ["时限1( 发起2)40", "时限2( 发起2)384"],
+			"data": [3.2, 30.72],
+			"color": {}
+		}
+	}, {
+		"y": 1.0,
+		"color": "colors[3]",
+		"drilldown": {
+			"categories": ["时限1( 发起1、 发起2)5", "时限2( 发起1、 发起2)3"],
+			"data": [0.4, 0.24],
+			"color": {}
+		}
+	}]
+}

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title></title>
+		<script src="js/citymap.js"></script>
+		<script src="js/cityToOrgCode.js"></script>
+		<script src="js/echarts.min.js"></script>
+		<script src="js/jquery.js"></script>
+		<script src="js/mapStyle.js"></script>
+		
+		<script>
+			var currentCity;//当前城市
+			var currentRelName;//当前省市名称
+			var currentLx = "SJ";//当前类型
+			var currentJsonStr = "{}";//当前json字符串
+			var currentExportName = "广东省各市贡献值";
+			var currentCode = "2440000";//当前组织代码
+			var valueColor = [ {} ];//热力图颜色数组
+			function goBackChinaMap() {//返回到中国地图
+				$('#china_map').css('display', 'block');
+				$('#city_map').css('display', 'none');
+				$('#proe_map').css('display', 'none');
+			}
+			function goBackProeMap() {//返回到广东省
+				//	currentLx = "SJ";
+				initMap(); //初始化地图
+				$('#city_map').css('display', 'none');
+				$('#proe_map').css('display', 'block');
+				$('#goback').hide();
+				currentExportName = "广东省各市贡献值";
+				$("#dwValueTable").show();
+			}
+			
+			var searchData1;//搜索数据
+			//searchData1 = serializeObject($("#search_form_1"));//序列化数据
+		</script>
+	</head>
+	<body>
+		
+	<div id="main" style="height:800px;width:670px;margin-left:15px;">
+		<div id="proe_map" style="width:670px;height:800px;display: block;"></div>
+		<div id="city_map" style="width:670px;height:800px;display: none;"></div>
+
+		<div class="retPro"
+			style="z-index:999;display: inline;position:absolute;top:100px;left:0px;">
+			<a id="goback" href="javascript:void(0);" onclick="goBackProeMap()"
+				style="display:none;height:30px;line-height: 30px;padding:5px 10px;margin-left:20px;cursor: pointer;color:#06c;text-decoration:none;">
+				返回上一级 </a>
+		</div>
+	</div>
+
+		
+	<script>
+		$(function() {
+			initMap();
+		});
+
+
+
+        //部门工单
+        function openDsgd(){
+        	    var dsGdListTemp = document.getElementById('dsGdListTemp').innerHTML;
+				var resultHtml = juicer(dsGdListTemp, {});
+				$("#mapGdTab").html(resultHtml);
+				$('#gdMx').fadeIn();
+				$('.modal-content').css("left","5%");
+				$("#black_bg").css('top','0px');
+				$("#black_bg").css('z-index','9999');
+				$('#gdMx').css("z-index","99999999");
+				$('#gdMxTitle').html("test");
+				
+        }
+
+		//初始化省级地图
+		function initMap() {
+			currentExportName = "广东省各市贡献值";
+			currentLx = "SJ";
+			$('#goback').hide();
+			getHotVaule("广东");
+			
+		}
+		
+		//加载省级地图
+		function initSjMap(){
+			$.get('json/guangdong.json', function(mapJson) {
+				echarts.registerMap('guangdong', mapJson);
+				var chart = echarts.init(document.getElementById('proe_map'),
+						'mapStyle');//在id为mainMap的dom元素中显示地图
+				chart.setOption({
+					tooltip : {
+						trigger : 'item',
+						formatter : function(result) {//回调函数，参数params具体格式参加官方API
+
+							return result.name;
+						}
+					},
+					dataRange : {
+						x : '-100px',
+						y : '-100px',
+						splitList : valueColor
+
+					},
+					title : {
+						text : '广东',
+						//subtext:'',
+						x : 'center',
+						y : 'top',
+						textAlign : 'left'
+					},
+					series : [ {
+						type : 'map',
+						map : 'guangdong',//要和echarts.registerMap（）中第一个参数一致
+						scaleLimit : {
+							min : 0.6,
+							max : 1.0
+						},//缩放
+						mapLocation : {
+							y : 60
+						},
+						itemSytle : {
+							emphasis : {
+								label : {
+									show : false
+								}
+							}
+						},
+						label : {
+							normal : {
+								show : true
+							},
+							emphasis : {
+								show : true
+							}
+						},
+						data : cityGdsValue
+					//dataParam//人口数据：例如[{name:'济南',value:'100万'},{name:'菏泽'，value:'100万'}......]
+					} ]
+				}),
+
+				setTimeout(function() {
+					$('#city_map').css('display', 'none');
+					$('#proe_map').css('display', 'block');
+					$("#dwValueTable").show();
+					$("#xq").show();
+					$("#titleTable").show();
+					//$("#tabs_panel_div").hideLoading();
+				}, 500);
+
+				 chart.on('click', function(rel) {//地图点击事件
+					//alert(rel.name)
+					if (rel.name == "深圳") {
+						return;
+					}
+					currentLx = "DS";
+					getHotVaule2(rel.name,rel);
+				}) 
+
+			});
+		}
+		
+		//加载市级地图
+		function getDsjMap(rel){
+			setTimeout(function() {
+
+				$('#city_map').css('display', 'block');
+				$('#proe_map').css('display', 'none');
+				 $("#xq").show();
+				/*$("#titleTable").show();
+				$("#tabs_panel_div").hideLoading(); */
+				$('#goback').show();
+			}, 500);
+			//选择市的单击事件
+			var selectCity = cityMap[rel.name];//获取选中的城市
+			currentCity = selectCity;
+			currentRelName = rel.name;
+			currentExportName = currentRelName + "各区县贡献值";
+			// 	alert(selectCity);
+			//    调取后台数据
+			$.get('json/' + selectCity + '.json',
+					function(Citymap) {
+						echarts.registerMap(selectCity, Citymap);
+						var myChartCity = echarts
+								.init(document
+										.getElementById('city_map'),
+										'mapStyle');
+						myChartCity.setOption({
+							tooltip : {
+								trigger : 'item',
+								formatter : function loadData(result) {//回调函数，参数params具体格式参加官方API
+									return result.name;
+								}
+							},
+							dataRange : {
+								x : '-100px',
+								y : '-100px',
+								splitList : valueColor
+
+							},
+							title : {
+								text : rel.name,
+								//subtext:'',
+								x : 'center',
+								y : 'top',
+								textAlign : 'left'
+							},
+							series : [ {
+								type : 'map',
+								map : selectCity,//要和echarts.registerMap（）中第一个参数一致
+								scaleLimit : {
+									min : 0.6,
+									max : 1.0
+								},//缩放
+								mapLocation : {
+									y : 60
+								},
+								itemSytle : {
+									emphasis : {
+										label : {
+											show : false
+										}
+									}
+								},
+								label : {
+									normal : {
+										show : true
+									},
+									emphasis : {
+										show : true
+									}
+								},
+								data : cityGdsValue
+							//dataParam//人口数据：例如[{name:'济南',value:'100万'},{name:'菏泽'，value:'100万'}......]
+							} ]
+						})
+
+						myChartCity.on('click', function(rel) {
+							setTimeout(function() {
+								$('#cont_pro_map').css('display','block');
+								$('#cont_city_map').css('display','none');
+							}, 500);
+
+						})
+					});
+		}
+		
+		
+		//获取省级热力图数据
+		function getHotVaule(dwName) {
+
+			$("#dwValueTable").hide();
+			$("#xq").hide();
+			$("#titleTable").hide();
+			//var url = "/ywbz/statisticsController/bmValue.do";
+			var jsonObject = requestData[dwName];//通过省市名字获取对应的数据
+			//	console.log(jsonObject);
+			currentCode = jsonObject["orgCode"];//当前组织代码
+
+			$("#xq").html(dwName + "各单位知识贡献情况统计");
+			var jsonStr = JSON.stringify(jsonObject);//将json对象转换为字符串	
+			currentJsonStr = jsonStr;
+			var postData = {};
+			/* $.extend(postData, {
+				jsonStr : jsonStr
+			}, searchData1, true);//数据过滤 */
+			$.ajax({
+						type : "POST",
+						async : true,
+						url : 'data1.json',
+						datatype : "json",
+						success : function(data) {
+							var result = eval("(" + data + ")");
+							var valueStr = result.valueStr;//热力图数据
+							var valueColorStr = result.valueColor;//热力图颜色数据
+							var valueObj = eval("(" + valueStr + ")");
+							var valueColorObj = eval("(" + valueColorStr + ")");
+							cityGdsValue = valueObj;//赋值数据
+							valueColor = valueColorObj;//赋值数据
+							//var Temp = document.getElementById('dwValueListTemp').innerHTML;//获取热力图表格模板
+							//var resultHtml = juicer(Temp, result);//数据与模板绑定					
+							//$("#dwValueTable").html(resultHtml);//展示模板与数据
+							initSjMap();
+						}
+					});
+		}
+		
+		
+		//获取市级热力图数据
+		function getHotVaule2(dwName,rel) {
+
+			$("#dwValueTable").hide();
+			$("#xq").hide();
+			$("#titleTable").hide();
+			var url = "data1.json";
+			var jsonObject = requestData[dwName];//通过省市名字获取对应的数据
+			//	console.log(jsonObject);
+			currentCode = jsonObject["orgCode"];//当前组织代码
+
+			$("#xq").html(dwName + "各部门知识贡献情况统计");
+			var jsonStr = JSON.stringify(jsonObject);//将json对象转换为字符串	
+			currentJsonStr = jsonStr;
+			var postData = {};
+			/* $.extend(postData, {
+				jsonStr : jsonStr
+			}, searchData1, true);//数据过滤 */
+			$
+					.ajax({
+						type : "POST",
+						async : true,
+						url : url,
+						data : postData,
+						datatype : "json",
+						success : function(data) {
+							var result = eval("(" + data + ")");
+							var valueStr = result.valueStr;//热力图数据
+							var valueColorStr = result.valueColor;//热力图颜色数据
+							var valueObj = eval("(" + valueStr + ")");
+							var valueColorObj = eval("(" + valueColorStr + ")");
+							cityGdsValue = valueObj;//赋值数据
+							valueColor = valueColorObj;//赋值数据
+							/* var Temp = document
+									.getElementById('dwValueListTemp').innerHTML;//获取热力图表格模板
+							var resultHtml = juicer(Temp, result);//数据与模板绑定					
+							$("#dwValueTable").html(resultHtml);//展示模板与数据 */
+							getDsjMap(rel);
+						},
+						error : function(data) {
+							alert("请求错误！");
+						}
+					});
+		}
+	</script>
+					
+	</body>
+</html>
